@@ -97,7 +97,7 @@ export interface UserLevel {
 // Daily Challenge Types
 export interface DailyChallenge {
     id: string
-    date: string // YYYY-MM-DD
+    date: string // yyyy-MM-dd
     testMode: string
     target: number
     description: string
@@ -109,7 +109,7 @@ export interface DailyChallenge {
 export interface UserStreak {
     currentStreak: number
     longestStreak: number
-    lastPlayedDate: string // YYYY-MM-DD
+    lastPlayedDate: string // yyyy-MM-dd
 }
 
 // Sound Effect Types  

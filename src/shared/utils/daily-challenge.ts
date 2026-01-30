@@ -4,7 +4,7 @@ import { TEST_MODES } from '../constants/app'
 
 // Generate a daily challenge based on the current date
 export function generateDailyChallenge(date: Date = new Date()): DailyChallenge {
-    const dateStr = format(date, 'yyyy-MM-DD')
+    const dateStr = format(date, 'yyyy-MM-dd')
 
     // Use date as seed for consistent daily challenges
     const seed = parseInt(dateStr.replace(/-/g, ''))

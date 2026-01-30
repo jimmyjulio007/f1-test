@@ -35,7 +35,7 @@ export function updateStreak(): UserStreak {
         return getUserStreak()
     }
 
-    const today = format(new Date(), 'yyyy-MM-DD')
+    const today = format(new Date(), 'yyyy-MM-dd')
     const streak = getUserStreak()
 
     // First time playing
@@ -95,7 +95,7 @@ export function getStreakStatus(): {
         }
     }
 
-    const today = format(new Date(), 'yyyy-MM-DD')
+    const today = format(new Date(), 'yyyy-MM-dd')
     const lastPlayed = parseISO(streak.lastPlayedDate)
     const daysSince = differenceInDays(new Date(), lastPlayed)
 

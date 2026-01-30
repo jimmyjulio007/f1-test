@@ -48,6 +48,16 @@ export function useDashboardStats() {
                 // Estimate total training time (seconds per test, convert to minutes)
                 const totalTime = Math.round((allScores.length * TIME_CONSTANTS.SECONDS_PER_TEST) / TIME_CONSTANTS.SECONDS_IN_MINUTE)
 
+                // Get user progress for ranking calculation
+                const progress = await dbRequest.getUserProgress(user.id)
+
+                // MOCK RANK: In a real app, this would be an API call to count users with higher XP
+                // Higher XP = Lower Rank number (Rank 1 is best)
+                // We'll simulate a rank between 100 and 15000 based on total tests and XP
+                const mockBaseRank = 15420
+                const rankImprovement = (progress.totalXP / 10) + (progress.totalTests * 5)
+                const rank = Math.max(1, Math.round(mockBaseRank - rankImprovement))
+
                 // Get recent 5 scores
                 const recentScores = allScores
                     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
@@ -62,7 +72,7 @@ export function useDashboardStats() {
                     avgReaction,
                     accuracy,
                     totalTime,
-                    rank: 0, // Will need global ranking logic later
+                    rank,
                     recentScores
                 })
             } catch (error) {

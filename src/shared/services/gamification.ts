@@ -22,10 +22,11 @@ class GamificationService {
      */
     async onTestComplete(userId: string, testData: {
         mode: string
-        reactionMs: number
-        accuracy: number
+        reactionMs?: number
+        accuracy?: number
         isPersonalBest?: boolean
         sequenceLevel?: number
+        score?: number
     }) {
         // Increment test counter
         await dbRequest.incrementTotalTests(userId)
@@ -103,24 +104,27 @@ class GamificationService {
      */
     private async checkAchievements(userId: string, testData: {
         mode: string
-        reactionMs: number
-        accuracy: number
+        reactionMs?: number
+        accuracy?: number
         sequenceLevel?: number
+        score?: number
     }) {
         const progress = await dbRequest.getUserProgress(userId)
         const achievements: Achievement[] = []
 
         // Speed achievements
-        if (testData.reactionMs <= 150) {
-            achievements.push(ACHIEVEMENTS.find(a => a.id === 'speed_150')!)
-        } else if (testData.reactionMs <= 180) {
-            achievements.push(ACHIEVEMENTS.find(a => a.id === 'speed_180')!)
-        } else if (testData.reactionMs <= 200) {
-            achievements.push(ACHIEVEMENTS.find(a => a.id === 'speed_200')!)
+        if (testData.reactionMs !== undefined) {
+            if (testData.reactionMs <= 150) {
+                achievements.push(ACHIEVEMENTS.find(a => a.id === 'speed_150')!)
+            } else if (testData.reactionMs <= 180) {
+                achievements.push(ACHIEVEMENTS.find(a => a.id === 'speed_180')!)
+            } else if (testData.reactionMs <= 200) {
+                achievements.push(ACHIEVEMENTS.find(a => a.id === 'speed_200')!)
+            }
         }
 
         // Accuracy achievements
-        if (testData.accuracy === 100) {
+        if (testData.accuracy !== undefined && testData.accuracy === 100) {
             achievements.push(ACHIEVEMENTS.find(a => a.id === 'accuracy_100')!)
         }
 

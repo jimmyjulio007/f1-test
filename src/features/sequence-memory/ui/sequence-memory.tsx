@@ -6,6 +6,7 @@ import { Card } from "@/shared/ui/card"
 import { cn } from "@/shared/lib/utils"
 import { authService } from "@/features/auth/model/auth-service"
 import { dbRequest } from "@/shared/lib/db"
+import { gamificationService } from "@/shared/services/gamification"
 import { TEST_MODES, SEQUENCE_CONFIG } from "@/shared/constants/app"
 import { generateSequence, getSequenceSpeed } from "@/shared/utils/sequence"
 import { useSequenceStore } from "../model/store"
@@ -81,6 +82,13 @@ export function SequenceMemory() {
 
         try {
             await dbRequest.addScore(user.id, TEST_MODES.SEQUENCE, score, 100)
+
+            // Handle gamification
+            await gamificationService.onTestComplete(user.id, {
+                mode: TEST_MODES.SEQUENCE,
+                score,
+                accuracy: 100,
+            })
         } catch (error) {
             console.error("Failed to save score:", error)
         }

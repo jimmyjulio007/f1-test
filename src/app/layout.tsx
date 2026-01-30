@@ -22,13 +22,24 @@ const orbitron = Orbitron({
 
 export const metadata: Metadata = {
   title: "NeuroDrive - F1 Cognitive Performance",
-  description: "Train your reaction and decision making skills like an F1 driver.",
+  description: "Train your cognitive reflexes like an F1 Champion. Reaction. Speed. Precision.",
   icons: {
     icon: [
       { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
       { url: '/favicon.png', sizes: '16x16', type: 'image/png' },
     ],
     apple: '/favicon.png',
+  },
+  openGraph: {
+    title: "NeuroDrive - F1 Cognitive Performance",
+    description: "Train your cognitive reflexes like an F1 Champion. Reaction. Speed. Precision.",
+    images: [{ url: '/og-image.png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "NeuroDrive - F1 Cognitive Performance",
+    description: "Train your cognitive reflexes like an F1 Champion. Reaction. Speed. Precision.",
+    images: ['/og-image.png'],
   },
 };
 
