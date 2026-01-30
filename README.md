@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+# NeuroDrive - F1 Cognitive Performance Platform
+
+F1-inspired reflex and cognitive reaction performance platform.
+**Optimized for local-first performance with IndexedDB.**
+
+## Features
+
+- **Reaction Test**: Test your raw start reaction time (Green Light).
+- **F1 Start Sequence**: Simulate the 5-light start sequence.
+- **Decision Test**: Stroop effect test for cognitive speed (Color/Text).
+- **Dashboard**: Track your stats with radar charts.
+- **Leaderboard**: Local high scores.
+- **Training Hub**: Curated test programs.
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: TailwindCSS (Cockpit Dark Theme)
+- **State**: Zustand
+- **Database**: IndexedDB (client-side persistence via `idb`)
+- **Charts**: Chart.js / React-Chartjs-2
+- **Architecture**: Feature Sliced Design (FSD)
 
 ## Getting Started
 
-First, run the development server:
+1. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Run Development Server**:
+   ```bash
+   pnpm dev
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Open App**:
+   Navigate to [http://localhost:3000](http://localhost:3000). 
+   The app uses the browser's IndexedDB, so no database setup is required.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure (FSD)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/app`: Next.js pages and routing
+- `src/features`: Business logic split by feature (auth, reaction-test, etc.)
+- `src/widgets`: Compositional UI blocks (Header, Sidebar)
+- `src/entities`: Domain entities (User model)
+- `src/shared`: Reusable UI kit and utilities (`db.ts` for IDB)
 
-## Learn More
+## Performance
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Optimized with Server Components (Shell) & Client Components (Logic)
+- `performance.now()` for sub-millisecond precision
+- Light/Dark mode storage
