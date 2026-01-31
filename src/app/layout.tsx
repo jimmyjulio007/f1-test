@@ -21,25 +21,21 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://f1-test-nine.vercel.app'),
   title: "NeuroDrive - F1 Cognitive Performance",
   description: "Train your cognitive reflexes like an F1 Champion. Reaction. Speed. Precision.",
-  icons: {
-    icon: [
-      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon.png', sizes: '16x16', type: 'image/png' },
-    ],
-    apple: '/favicon.png',
-  },
   openGraph: {
     title: "NeuroDrive - F1 Cognitive Performance",
     description: "Train your cognitive reflexes like an F1 Champion. Reaction. Speed. Precision.",
-    images: [{ url: '/og-image.png' }],
+    url: 'https://f1-test-nine.vercel.app',
+    siteName: 'NeuroDrive',
+    locale: 'en_US',
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: "NeuroDrive - F1 Cognitive Performance",
     description: "Train your cognitive reflexes like an F1 Champion. Reaction. Speed. Precision.",
-    images: ['/og-image.png'],
   },
 };
 

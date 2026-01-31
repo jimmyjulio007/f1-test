@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://neurodrive-f1.com' // Replace with actual domain
+    const baseUrl = 'https://f1-test-nine.vercel.app' // Replace with actual domain
 
     const routes = [
         '',
