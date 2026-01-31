@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: neurodrive_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: neurodrive
+      POSTGRES_PASSWORD: formula1
+      POSTGRES_DB: neurodrive_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

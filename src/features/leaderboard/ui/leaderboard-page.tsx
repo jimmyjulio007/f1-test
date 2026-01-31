@@ -21,7 +21,11 @@ export default function LeaderboardPage() {
     const [rankings, setRankings] = useState<LeaderboardEntry[]>([])
     const [loading, setLoading] = useState(true)
 
+    const [isConnected, setIsConnected] = useState(false)
+    const [socket, setSocket] = useState<any>(null)
+
     useEffect(() => {
+        // Load initial data (fallback/history)
         async function loadRankings() {
             setLoading(true)
             const data = await leaderboardService.getGlobalRankings(activeMode)
@@ -29,7 +33,46 @@ export default function LeaderboardPage() {
             setLoading(false)
         }
         loadRankings()
-    }, [activeMode])
+
+        // Initialize socket server (if not already)
+        fetch("/api/socket-init").catch(() => { });
+
+        // Socket connection
+        const socketInstance = (window as any).io?.() ||
+            import("socket.io-client").then(({ io }) => {
+                const s = io({
+                    path: "/api/socket/io",
+                    addTrailingSlash: false,
+                })
+                setSocket(s)
+
+                s.on("connect", () => setIsConnected(true))
+                s.on("disconnect", () => setIsConnected(false))
+
+                s.on("leaderboard_update", (data: any[]) => {
+                    // Map the raw socket data to our frontend model
+                    // Using temporary mapping since socket sends simplified data
+                    const mappedData: LeaderboardEntry[] = data.map((p, index) => ({
+                        rank: index + 1,
+                        username: p.name,
+                        score: p.score,
+                        level: Math.floor(p.score / 100), // Mock level calculation
+                        userId: p.id,
+                        avatar: "",
+                        isYou: false, // In real app check against current user ID
+                        change: 0
+                    }))
+                    setRankings(mappedData)
+                    setLoading(false)
+                })
+
+                return s
+            })
+
+        return () => {
+            if (socket) socket.disconnect()
+        }
+    }, [activeMode]) // Note: In a real app we might want to subscribe to specific rooms based on mode
 
     const topThree = rankings.slice(0, 3)
     const remaining = rankings.slice(3)
@@ -98,7 +141,10 @@ export default function LeaderboardPage() {
                     <Card className="overflow-hidden border-primary/20 bg-black/40 backdrop-blur-xl">
                         <div className="p-6 border-b border-primary/10 bg-primary/5 flex justify-between items-center">
                             <h3 className="font-black tracking-widest uppercase text-sm">Full Grid Standings</h3>
-                            <span className="text-xs text-muted-foreground">Updated in real-time</span>
+                            <div className="flex items-center gap-2">
+                                <span className={cn("w-2 h-2 rounded-full animate-pulse", isConnected ? "bg-green-500" : "bg-red-500")}></span>
+                                <span className="text-xs text-muted-foreground">{isConnected ? "LIVE DATA" : "OFFLINE"}</span>
+                            </div>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full">

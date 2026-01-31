@@ -10,6 +10,7 @@ import { gamificationService } from "@/shared/services/gamification"
 import { TEST_MODES, SEQUENCE_CONFIG } from "@/shared/constants/app"
 import { generateSequence, getSequenceSpeed } from "@/shared/utils/sequence"
 import { useSequenceStore } from "../model/store"
+import { useSound } from "@/shared/hooks/useSound" // Added sound hook
 import type { Direction } from "@/shared/types"
 import {
     ArrowUp,
@@ -68,8 +69,23 @@ export function SequenceMemory() {
         resetGame,
     } = useSequenceStore()
 
+    const { play } = useSound()
+
     // Track which direction is currently flashing during showing phase
     const [flashingDirection, setFlashingDirection] = useState<Direction | null>(null)
+
+    // Sound Effects
+    useEffect(() => {
+        if (gameState === "showing" && flashingDirection) {
+            play('countdown')
+        }
+        if (gameState === "wrong") {
+            play('error')
+        }
+        if (gameState === "correct") {
+            play('success')
+        }
+    }, [gameState, flashingDirection, play])
 
     const startGame = () => {
         resetGame()

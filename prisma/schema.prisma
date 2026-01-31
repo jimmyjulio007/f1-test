@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Game stats
+  totalScore Int @default(0)
+  level     Int @default(1)
+  gamesPlayed Int @default(0)
+  
+  // Profile
+  country   String? // ISO code
+  avatar    String? // URL
+
+  // Relations
+  scores    Score[]
+}
+
+model Score {
+  id        String   @id @default(uuid())
+  score     Int
+  gameMode  String   // "REACTION", "DECISION", "F1_LIGHTS"
+  createdAt DateTime @default(now())
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}

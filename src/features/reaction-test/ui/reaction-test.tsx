@@ -3,10 +3,23 @@
 import { useEffect, useRef } from "react"
 import { useReactionStore } from "../model/store"
 import { cn } from "@/shared/lib/utils"
-import { Button } from "@/shared/ui/button"
+import { useSound } from "@/shared/hooks/useSound"
 
 export function ReactionTest() {
     const { state, attempts, startTest, click, reset } = useReactionStore()
+    const { play } = useSound()
+
+    // Sound Effects
+    useEffect(() => {
+        if (state === 'waiting') play('start')
+        if (state === 'ready') play('countdown') // or a 'beep'
+        if (state === 'early') play('error')
+        if (state === 'result') {
+            const score = attempts[attempts.length - 1]
+            if (score && score < 200) play('perfect') // Super fast
+            else play('success')
+        }
+    }, [state, attempts, play])
 
     // Handle spacebar
     useEffect(() => {

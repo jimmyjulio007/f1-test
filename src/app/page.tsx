@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/shared/ui/button";
-import { Zap, Timer, Activity, Trophy, Play } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
+import { Timer, Activity, Trophy, Play, Users } from "lucide-react";
 import type { Metadata } from "next";
 
 // SEO Metadata for Landing Page
@@ -26,11 +25,12 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-  },
+}
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 }
 
 export default function LandingPage() {
@@ -61,10 +61,18 @@ export default function LandingPage() {
                 Start Engine
               </Button>
             </Link>
-            <Link href="#features">
-              <Button variant="outline" size="lg" className="h-14 px-10 text-xl font-bold uppercase tracking-widest bg-transparent border-white/20 hover:bg-white/5 cursor-pointer">
-                Telementry
+            <Link href="/multiplayer">
+              <Button variant="outline" size="lg" className="h-14 px-10 text-xl font-bold uppercase tracking-widest bg-transparent border-white/20 hover:bg-white/5 hover:border-primary/50 hover:text-primary transition-all cursor-pointer">
+                <Users className="w-5 h-5 mr-2" /> Multiplayer
               </Button>
+            </Link>
+          </div>
+
+          <div className="pt-4">
+            <Link href="#features">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground hover:text-white transition-colors cursor-pointer">
+                View Telemetry
+              </span>
             </Link>
           </div>
         </div>

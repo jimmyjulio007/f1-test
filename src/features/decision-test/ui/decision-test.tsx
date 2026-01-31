@@ -5,6 +5,8 @@ import { useDecisionStore, type Color } from "../model/store"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/ui/button"
 import { saveDecisionScore } from "../api/actions"
+import { useSound } from "@/shared/hooks/useSound"
+
 
 const COLORS: { [key in Color]: string } = {
     red: "text-red-500",
@@ -13,11 +15,9 @@ const COLORS: { [key in Color]: string } = {
     yellow: "text-yellow-500"
 }
 
-// Map keyboard keys to colors?
-// Let's use clickable grid for clarity first, maybe keyboard shortcuts later
-
 export function DecisionTest() {
     const { state, currentQuestion, score, totalAttempts, correctAttempts, history, startGame, answer, reset } = useDecisionStore()
+    const { play } = useSound()
 
     // Save score on end
     useEffect(() => {
@@ -29,6 +29,11 @@ export function DecisionTest() {
     }, [state, totalAttempts, correctAttempts, history])
 
     const handleAnswer = (color: Color) => {
+        if (currentQuestion && color === currentQuestion.color) {
+            play('success')
+        } else {
+            play('error')
+        }
         answer(color)
     }
 

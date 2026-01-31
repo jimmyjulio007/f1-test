@@ -5,8 +5,21 @@ import { useF1Store } from "../model/store"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/ui/button"
 
+import { useSound } from "@/shared/hooks/useSound"
+
 export function F1Lights() {
     const { state, lightsOn, reactionTime, startSequence, click, reset } = useF1Store()
+    const { play } = useSound()
+
+    // Sound Effects
+    useEffect(() => {
+        if (state === 'counting' && lightsOn > 0) play('countdown')
+        if (state === 'early') play('error')
+        if (state === 'result') {
+            if (reactionTime && reactionTime < 200) play('perfect')
+            else play('success')
+        }
+    }, [state, lightsOn, reactionTime, play])
 
     // Keyboard controls
     useEffect(() => {
