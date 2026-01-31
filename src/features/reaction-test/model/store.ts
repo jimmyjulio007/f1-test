@@ -25,7 +25,6 @@ export const useReactionStore = create<ReactionStore>((set, get) => ({
 
     startTest: () => {
         set({ state: 'waiting', startTime: 0, endTime: 0 })
-        // Random delay between 2s and 5s
         const delay = Math.random() * 3000 + 2000
 
         setTimeout(() => {
@@ -52,7 +51,6 @@ export const useReactionStore = create<ReactionStore>((set, get) => ({
             const endTime = performance.now()
             const diff = endTime - startTime
 
-            // Save score asynchronously
             saveReactionScore(Math.round(diff))
 
             set((prev) => ({

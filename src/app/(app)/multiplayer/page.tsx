@@ -12,9 +12,10 @@ import { useSequenceStore } from "@/features/sequence-memory/model/store";
 import { DecisionTest } from "@/features/decision-test/ui/decision-test";
 import { useDecisionStore } from "@/features/decision-test/model/store";
 import { Button } from "@/shared/ui/button";
-import { ArrowLeft, Flag, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, User } from "lucide-react";
 import { TEST_MODES, TEST_MODE_LABELS } from "@/shared/constants/app";
 import { VictoryScreen } from "@/features/multiplayer/ui/victory-screen";
+import Link from "next/link";
 
 interface Player {
     id: string;
@@ -68,8 +69,24 @@ export default function MultiplayerPage() {
     return (
         <div className="space-y-6">
             {!gameStarted ? (
-                <div className="container mx-auto">
-                    <div className="max-w-2xl mx-auto text-center mb-12">
+                <div className="container mx-auto relative">
+                    <div className="absolute right-0 top-0 hidden md:block">
+                        <Link href="/profile">
+                            <Button variant="ghost" className="rounded-full w-12 h-12 bg-white/5 hover:bg-white/10 border border-white/10" title="Driver Profile">
+                                <User className="w-6 h-6 text-muted-foreground hover:text-primary transition-colors" />
+                            </Button>
+                        </Link>
+                    </div>
+                    <div className="max-w-2xl mx-auto text-center mb-12 pt-8 md:pt-0">
+                        {/* Mobile profile button */}
+                        <div className="md:hidden flex justify-end mb-4">
+                            <Link href="/profile">
+                                <Button variant="ghost" size="sm" className="bg-white/5">
+                                    <User className="w-4 h-4 mr-2" /> Profile
+                                </Button>
+                            </Link>
+                        </div>
+
                         <h1 className="text-4xl md:text-6xl font-black font-orbitron text-white mb-4">
                             MULTIPLAYER <span className="text-primary">ARENA</span>
                         </h1>
@@ -95,14 +112,6 @@ export default function MultiplayerPage() {
                             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Lobby
                         </Button>
 
-                        {!finished && (
-                            <Button
-                                onClick={handleFinish}
-                                className="bg-green-600 hover:bg-green-700 text-white font-bold animate-pulse"
-                            >
-                                <Flag className="w-4 h-4 mr-2" /> FINISH RACE
-                            </Button>
-                        )}
                         {finished && (
                             <div className="flex items-center text-green-500 font-bold bg-green-500/10 px-4 py-2 rounded">
                                 <CheckCircle className="w-4 h-4 mr-2" /> WAITING FOR OTHERS
@@ -119,16 +128,16 @@ export default function MultiplayerPage() {
                         </div>
 
                         {gameMode === TEST_MODES.REACTION && (
-                            <ReactionTestWrapper onScoreUpdate={handleScoreUpdate} />
+                            <ReactionTestWrapper onScoreUpdate={handleScoreUpdate} onAutoFinish={handleFinish} />
                         )}
                         {gameMode === TEST_MODES.F1_LIGHTS && (
-                            <F1LightsWrapper onScoreUpdate={handleScoreUpdate} />
+                            <F1LightsWrapper onScoreUpdate={handleScoreUpdate} onAutoFinish={handleFinish} />
                         )}
                         {gameMode === TEST_MODES.SEQUENCE && (
                             <SequenceWrapper onScoreUpdate={handleScoreUpdate} onAutoFinish={handleFinish} />
                         )}
                         {gameMode === TEST_MODES.DECISION && (
-                            <DecisionWrapper onScoreUpdate={handleScoreUpdate} />
+                            <DecisionWrapper onScoreUpdate={handleScoreUpdate} onAutoFinish={handleFinish} />
                         )}
                     </div>
                 </div>
@@ -148,35 +157,50 @@ export default function MultiplayerPage() {
 
 // --- Game Wrappers ---
 
-function ReactionTestWrapper({ onScoreUpdate }: { onScoreUpdate: (score: number) => void }) {
+function ReactionTestWrapper({ onScoreUpdate, onAutoFinish }: { onScoreUpdate: (score: number) => void, onAutoFinish: () => void }) {
     const attempts = useReactionStore(state => state.attempts);
+
+    // We want to detect when the user has done a full "test" (usually 5 attempts).
+    // The store doesn't explicitly expose "isFinished" but we can check attempts length.
     useEffect(() => {
-        if (attempts.length > 0) {
-            const best = Math.min(...attempts);
-            if (!isNaN(best)) onScoreUpdate(Math.round(best));
+        if (attempts.length >= 5) {
+            const avg = attempts.reduce((a, b) => a + b, 0) / attempts.length;
+            onScoreUpdate(Math.round(avg));
+            onAutoFinish();
+        } else if (attempts.length > 0) {
+            // Update score loosely during progress
+            const avg = attempts.reduce((a, b) => a + b, 0) / attempts.length;
+            onScoreUpdate(Math.round(avg));
         }
-    }, [attempts, onScoreUpdate]);
+    }, [attempts, onScoreUpdate, onAutoFinish]);
     return <ReactionTest />;
 }
 
-function F1LightsWrapper({ onScoreUpdate }: { onScoreUpdate: (score: number) => void }) {
+function F1LightsWrapper({ onScoreUpdate, onAutoFinish }: { onScoreUpdate: (score: number) => void, onAutoFinish: () => void }) {
     const { reactionTime, state } = useF1Store();
     useEffect(() => {
         if (state === 'result' && reactionTime !== null) {
             onScoreUpdate(Math.round(reactionTime));
+            onAutoFinish();
+        } else if (state === 'early') {
+            onScoreUpdate(9999); // Max penalty
+            onAutoFinish();
         }
-    }, [state, reactionTime, onScoreUpdate]);
+    }, [state, reactionTime, onScoreUpdate, onAutoFinish]);
     return <F1Lights />;
 }
 
-function DecisionWrapper({ onScoreUpdate }: { onScoreUpdate: (score: number) => void }) {
+function DecisionWrapper({ onScoreUpdate, onAutoFinish }: { onScoreUpdate: (score: number) => void, onAutoFinish: () => void }) {
     const { state, history } = useDecisionStore();
     useEffect(() => {
-        if (state === 'end' && history.length > 0) {
-            const avgMs = Math.round(history.reduce((a, b) => a + b, 0) / history.length) || 0;
-            onScoreUpdate(avgMs);
+        if (state === 'end') {
+            if (history.length > 0) {
+                const avgMs = Math.round(history.reduce((a, b) => a + b, 0) / history.length) || 0;
+                onScoreUpdate(avgMs);
+            }
+            onAutoFinish();
         }
-    }, [state, history, onScoreUpdate]);
+    }, [state, history, onScoreUpdate, onAutoFinish]);
     return <DecisionTest />;
 }
 
@@ -184,6 +208,10 @@ function SequenceWrapper({ onScoreUpdate, onAutoFinish }: { onScoreUpdate: (scor
     const { score, gameState } = useSequenceStore();
     useEffect(() => {
         onScoreUpdate(score);
-    }, [score, gameState, onScoreUpdate]);
+        if (gameState === 'wrong') {
+            // Game over
+            onAutoFinish();
+        }
+    }, [score, gameState, onScoreUpdate, onAutoFinish]);
     return <SequenceMemory />;
 }

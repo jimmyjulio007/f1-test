@@ -67,13 +67,11 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
             const initialLeaderboard = await getLeaderboard();
             socket.emit("leaderboard_update", initialLeaderboard);
 
-            // --- GLOBAL LEADERBOARD EVENTS ---
-
             socket.on("submit_score", async ({ name, score, country }: { name: string; score: number, country?: string }) => {
                 console.log(`Global Score submitted: ${name} - ${score} (${country})`);
 
                 try {
-                    // 1. Find or create user
+
                     const user = await prisma.user.upsert({
                         where: { username: name },
                         update: {
@@ -89,7 +87,7 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
                         }
                     });
 
-                    // 2. Record the specific game score
+
                     await prisma.score.create({
                         data: {
                             score: score,
@@ -98,7 +96,7 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
                         }
                     });
 
-                    // 3. Update total score if this is a new high score for the user
+
                     if (score > user.totalScore) {
                         const newLevel = Math.floor(score / 500) + 1;
 
@@ -111,7 +109,7 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
                         });
                     }
 
-                    // 4. Fetch and broadcast new leaderboard
+
                     const newLeaderboard = await getLeaderboard();
                     io.emit("leaderboard_update", newLeaderboard);
 
@@ -120,17 +118,22 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
                 }
             });
 
-            // --- MULTIPLAYER ROOM EVENTS ---
 
-            socket.on("join_room", ({ roomId, name }: { roomId: string; name: string }, callback?: Function) => {
+
+            socket.on("join_room", ({ roomId, name, avatar }: { roomId: string; name: string, avatar?: string }, callback?: Function) => {
                 socket.join(roomId);
+
+                const isFirstPlayer = !rooms[roomId] || rooms[roomId].length === 0;
 
                 const player = {
                     id: socket.id,
                     name,
+                    avatar: avatar || "🏎️",
                     score: 0,
                     roomId,
                     finished: false,
+                    ready: false,
+                    isHost: isFirstPlayer
                 };
 
                 players[socket.id] = player;
@@ -158,16 +161,71 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
                 }
             });
 
-            socket.on("player_finished", (finalScore: number) => {
+            socket.on("toggle_ready", () => {
+                const player = players[socket.id];
+                if (player) {
+                    player.ready = !player.ready;
+                    io.to(player.roomId).emit("room_update", rooms[player.roomId]);
+                }
+            });
+
+            socket.on("player_finished", async (finalScore: number) => {
                 const player = players[socket.id];
                 if (player) {
                     player.score = finalScore;
                     player.finished = true;
 
                     const room = rooms[player.roomId];
+                    const gameMode = (room as any).gameMode || "REACTION";
+
+                    // Save to database
+                    try {
+
+                        const user = await prisma.user.upsert({
+                            where: { username: player.name },
+                            update: {
+                                gamesPlayed: { increment: 1 },
+                                avatar: player.avatar || "🏎️"
+                            },
+                            create: {
+                                username: player.name,
+                                avatar: player.avatar || "🏎️",
+                                totalScore: 0,
+                                level: 1,
+                                gamesPlayed: 1
+                            }
+                        });
+
+
+                        await prisma.score.create({
+                            data: {
+                                score: finalScore,
+                                gameMode: gameMode,
+                                userId: user.id
+                            }
+                        });
+
+
+                        if (finalScore > user.totalScore) {
+                            const newLevel = Math.floor(finalScore / 500) + 1;
+
+                            await prisma.user.update({
+                                where: { id: user.id },
+                                data: {
+                                    totalScore: finalScore,
+                                    level: newLevel
+                                }
+                            });
+                        }
+
+                        console.log(`Saved score ${finalScore} for ${player.name} in ${gameMode}`);
+                    } catch (e) {
+                        console.error("Error saving multiplayer score:", e);
+                    }
+
                     io.to(player.roomId).emit("room_update", room);
 
-                    // Check if all players finished
+
                     const allFinished = room.every((p: any) => p.finished);
                     if (allFinished) {
                         io.to(player.roomId).emit("game_over", room);
@@ -189,6 +247,20 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
                     rooms[roomId].forEach((p: any) => p.finished = false);
                 }
                 io.to(roomId).emit("game_started");
+            });
+
+            socket.on("send_chat", (text: string) => {
+                const player = players[socket.id];
+                if (player) {
+                    const message = {
+                        id: Math.random().toString(36).substring(7),
+                        text,
+                        senderId: player.id,
+                        senderName: player.name,
+                        timestamp: Date.now()
+                    };
+                    io.to(player.roomId).emit("chat_message", message);
+                }
             });
 
             socket.on("disconnect", () => {

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { Users, Play, Copy, ArrowRight, User, ArrowLeft } from "lucide-react";
+import { Users, Play, Copy, ArrowRight, User, ArrowLeft, MessageSquare } from "lucide-react";
 import { socket } from "../lib/socket-client";
 import { cn } from "@/shared/lib/utils";
 import { TEST_MODES, TEST_MODE_LABELS } from "@/shared/constants/app";
@@ -13,11 +13,21 @@ import { TEST_MODES, TEST_MODE_LABELS } from "@/shared/constants/app";
 interface Player {
     id: string;
     name: string;
+    avatar?: string;
     score: number;
     roomId: string;
+    isHost?: boolean;
+    ready?: boolean;
 }
 
-// Generate a random 5-char room code
+interface ChatMessage {
+    id: string;
+    senderId: string;
+    senderName: string;
+    text: string;
+    timestamp: number;
+}
+
 const generateRoomCode = () => Math.random().toString(36).substring(2, 7).toUpperCase();
 
 export function MultiplayerLobby({ onGameStart }: { onGameStart: () => void }) {
@@ -28,12 +38,12 @@ export function MultiplayerLobby({ onGameStart }: { onGameStart: () => void }) {
     const [error, setError] = useState("");
     const [isHost, setIsHost] = useState(false);
     const [gameMode, setGameMode] = useState<string>(TEST_MODES.REACTION);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const [chatInput, setChatInput] = useState("");
 
     useEffect(() => {
-        // Initialize socket server logic
         fetch("/api/socket-init");
 
-        // Socket listeners
         socket.on("room_update", (roomPlayers: Player[]) => {
             setPlayers(roomPlayers);
             setView("room");
@@ -47,12 +57,32 @@ export function MultiplayerLobby({ onGameStart }: { onGameStart: () => void }) {
             onGameStart();
         });
 
+        socket.on("chat_message", (msg: ChatMessage) => {
+            setChatMessages(prev => [...prev, msg]);
+        });
+
         return () => {
             socket.off("room_update");
             socket.off("game_mode_update");
             socket.off("game_started");
+            socket.off("chat_message");
         };
     }, [onGameStart]);
+
+
+    useEffect(() => {
+        const savedName = localStorage.getItem('neuro_username');
+        if (savedName) {
+            setUsername(savedName);
+
+        }
+    }, []);
+
+    const handleSendChat = () => {
+        if (!chatInput.trim()) return;
+        socket.emit("send_chat", chatInput);
+        setChatInput("");
+    };
 
     const handleConnect = (code: string) => {
         if (!username) return;
@@ -63,14 +93,16 @@ export function MultiplayerLobby({ onGameStart }: { onGameStart: () => void }) {
             console.log("Socket not connected, connecting...");
             socket.on("connect", () => {
                 console.log("Socket connected, joining room...");
-                socket.emit("join_room", { roomId: code, name: username }, (response: any) => {
+                const avatar = localStorage.getItem('neuro_avatar');
+                socket.emit("join_room", { roomId: code, name: username, avatar }, (response: any) => {
                     console.log("Join room response:", response);
                 });
             });
             socket.connect();
         } else {
             console.log("Socket already connected, joining room...");
-            socket.emit("join_room", { roomId: code, name: username }, (response: any) => {
+            const avatar = localStorage.getItem('neuro_avatar');
+            socket.emit("join_room", { roomId: code, name: username, avatar }, (response: any) => {
                 console.log("Join room response:", response);
             });
         }
@@ -310,20 +342,89 @@ export function MultiplayerLobby({ onGameStart }: { onGameStart: () => void }) {
                             {players.map((p) => (
                                 <div key={p.id} className="flex items-center justify-between p-3 bg-black/40 rounded border border-white/5">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center border border-white/10">
-                                            <User className="w-4 h-4 text-white" />
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center border border-white/10 relative">
+                                            {p.avatar ? (
+                                                <span className="text-lg">{p.avatar}</span>
+                                            ) : (
+                                                <User className="w-4 h-4 text-white" />
+                                            )}
+                                            {p.isHost && <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full border border-black" title="Host" />}
                                         </div>
                                         <span className="font-bold">{p.name} {p.id === socket.id && <span className="text-muted-foreground text-xs">(You)</span>}</span>
                                     </div>
-                                    <span className="text-xs font-mono text-green-500 font-bold">READY</span>
+                                    <span className={cn("text-xs font-mono font-bold", p.isHost ? "text-yellow-500" : p.ready ? "text-green-500" : "text-red-500")}>
+                                        {p.isHost ? "HOST" : p.ready ? "READY" : "NOT READY"}
+                                    </span>
                                 </div>
                             ))}
                         </div>
 
-                        {/* Only Host can start? For now anyone can start to keep it simple, or check isHost */}
-                        <Button onClick={handleStart} className="w-full h-14 text-xl font-black tracking-widest btn-glow">
-                            START RACE <Play className="ml-2 w-6 h-6" />
-                        </Button>
+                        {/* Chat Room */}
+                        <div className="bg-black/40 rounded-xl p-3 border border-white/5 space-y-3">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase font-bold tracking-wider mb-2">
+                                <MessageSquare className="w-3 h-3" /> Team Radio
+                            </div>
+                            <div className="h-32 overflow-y-auto space-y-2 flex flex-col scrollbar-thin scrollbar-thumb-white/10">
+                                {chatMessages.length === 0 && (
+                                    <div className="text-xs text-muted-foreground italic text-center py-8 opacity-50">
+                                        No communications yet...
+                                    </div>
+                                )}
+                                {chatMessages.map(msg => (
+                                    <div key={msg.id} className="text-xs break-words">
+                                        <span className={cn("font-bold mr-1", msg.senderId === socket.id ? "text-primary" : "text-blue-400")}>
+                                            {msg.senderName}:
+                                        </span>
+                                        <span className="text-white/90">{msg.text}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <Input
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                                    className="h-8 bg-white/5 text-xs border-white/10 focus:bg-white/10"
+                                    placeholder="Type message..."
+                                />
+                                <Button size="sm" onClick={handleSendChat} className="h-8 w-8 p-0 bg-primary hover:bg-primary/80">
+                                    <ArrowRight className="w-4 h-4 text-black" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        {players.find(p => p.id === socket.id)?.isHost ? (
+                            <Button
+                                onClick={handleStart}
+                                className="w-full h-14 text-xl font-black tracking-widest btn-glow disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={players.length < 2 || !players.filter(p => !p.isHost).every(p => p.ready)}
+                            >
+                                {players.length < 2 ? (
+                                    <span className="flex items-center gap-2 text-base">
+                                        <Users className="w-5 h-5 animate-pulse" /> WAITING FOR OPPONENT...
+                                    </span>
+                                ) : !players.filter(p => !p.isHost).every(p => p.ready) ? (
+                                    <span className="flex items-center gap-2 text-base">
+                                        <Users className="w-5 h-5" /> WAITING FOR READY...
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-2">
+                                        START RACE <Play className="w-6 h-6" />
+                                    </span>
+                                )}
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={() => socket.emit("toggle_ready")}
+                                variant={players.find(p => p.id === socket.id)?.ready ? "secondary" : "default"}
+                                className={cn(
+                                    "w-full h-14 text-xl font-black tracking-widest",
+                                    players.find(p => p.id === socket.id)?.ready ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" : "btn-glow"
+                                )}
+                            >
+                                {players.find(p => p.id === socket.id)?.ready ? "READY!" : "READY UP"}
+                            </Button>
+                        )}
                     </motion.div>
                 )}
 

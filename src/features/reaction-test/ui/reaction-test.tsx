@@ -1,27 +1,26 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect } from "react"
 import { useReactionStore } from "../model/store"
 import { cn } from "@/shared/lib/utils"
 import { useSound } from "@/shared/hooks/useSound"
+import { PAGE_CONTENT } from "@/shared/constants/content"
 
 export function ReactionTest() {
-    const { state, attempts, startTest, click, reset } = useReactionStore()
+    const { state, attempts, startTest, click } = useReactionStore()
     const { play } = useSound()
 
-    // Sound Effects
     useEffect(() => {
         if (state === 'waiting') play('start')
-        if (state === 'ready') play('countdown') // or a 'beep'
+        if (state === 'ready') play('countdown')
         if (state === 'early') play('error')
         if (state === 'result') {
             const score = attempts[attempts.length - 1]
-            if (score && score < 200) play('perfect') // Super fast
+            if (score && score < 200) play('perfect')
             else play('success')
         }
     }, [state, attempts, play])
 
-    // Handle spacebar
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.code === 'Space') {
@@ -56,24 +55,24 @@ export function ReactionTest() {
             <div className="text-center space-y-4 pointer-events-none">
                 {state === 'idle' && (
                     <>
-                        <h2 className="text-4xl font-bold uppercase tracking-widest text-primary">Reaction Test</h2>
-                        <p className="text-muted-foreground">Click or Press Space when ready</p>
-                        <p className="text-sm text-muted-foreground pt-4">Wait for Green</p>
+                        <h2 className="text-4xl font-bold uppercase tracking-widest text-primary">{PAGE_CONTENT.REACTION_TEST.TITLE}</h2>
+                        <p className="text-muted-foreground">{PAGE_CONTENT.REACTION_TEST.SUBTITLE}</p>
+                        <p className="text-sm text-muted-foreground pt-4">{PAGE_CONTENT.REACTION_TEST.WAIT_FOR_GREEN}</p>
                     </>
                 )}
 
                 {state === 'waiting' && (
-                    <h2 className="text-6xl font-black text-red-500 tracking-widest animate-pulse">WAIT</h2>
+                    <h2 className="text-6xl font-black text-red-500 tracking-widest animate-pulse">{PAGE_CONTENT.REACTION_TEST.WAIT}</h2>
                 )}
 
                 {state === 'ready' && (
-                    <h2 className="text-8xl font-black text-white tracking-widest">CLICK!</h2>
+                    <h2 className="text-8xl font-black text-white tracking-widest">{PAGE_CONTENT.REACTION_TEST.CLICK}</h2>
                 )}
 
                 {state === 'early' && (
                     <>
-                        <h2 className="text-4xl font-bold text-yellow-500">TOO EARLY!</h2>
-                        <p className="text-muted-foreground">Click to try again</p>
+                        <h2 className="text-4xl font-bold text-yellow-500">{PAGE_CONTENT.REACTION_TEST.TOO_EARLY}</h2>
+                        <p className="text-muted-foreground">{PAGE_CONTENT.REACTION_TEST.TRY_AGAIN}</p>
                     </>
                 )}
 
@@ -81,19 +80,19 @@ export function ReactionTest() {
                     <>
                         <div className="flex items-baseline justify-center gap-2">
                             <span className="text-8xl font-mono font-bold text-primary">{getLastScore()}</span>
-                            <span className="text-2xl text-muted-foreground">ms</span>
+                            <span className="text-2xl text-muted-foreground">{PAGE_CONTENT.REACTION_TEST.MILLISECONDS}</span>
                         </div>
-                        <p className="text-muted-foreground">Click to try again</p>
+                        <p className="text-muted-foreground">{PAGE_CONTENT.REACTION_TEST.TRY_AGAIN}</p>
 
                         {attempts.length > 0 && (
                             <div className="mt-8 p-4 bg-background/50 rounded-lg backdrop-blur text-left min-w-[200px]">
-                                <p className="text-sm font-medium text-muted-foreground mb-2">History:</p>
+                                <p className="text-sm font-medium text-muted-foreground mb-2">{PAGE_CONTENT.REACTION_TEST.HISTORY}</p>
                                 <div className="space-y-1">
                                     {attempts.slice(-5).reverse().map((score, i) => (
                                         <div key={i} className="flex justify-between text-sm font-mono">
                                             <span>#{attempts.length - i}</span>
                                             <span className={score < 250 ? "text-primary" : "text-foreground"}>
-                                                {Math.round(score)}ms
+                                                {Math.round(score)}{PAGE_CONTENT.REACTION_TEST.MILLISECONDS}
                                             </span>
                                         </div>
                                     ))}
