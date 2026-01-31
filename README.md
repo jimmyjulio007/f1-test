@@ -220,7 +220,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions, feedback, or collaboration opportunities:
 
-- X: [@JulioSensei]([https://twitter.com/yourusername](https://x.com/julio21619850))
+- X: [JulioSensei]([https://twitter.com/yourusername](https://x.com/julio21619850))
 
 ---
 
